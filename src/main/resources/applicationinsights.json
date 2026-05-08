@@ -1,0 +1,14 @@
+{
+  "connectionString": "${APPLICATIONINSIGHTS_CONNECTION_STRING}",
+  "role": {
+    "name": "${APPLICATIONINSIGHTS_ROLE_NAME}",
+    "instance": "${APPLICATIONINSIGHTS_ROLE_INSTANCE}"
+  },
+  "customDimensions": {
+    "service.version": "${APPLICATION_VERSION}",
+    "deployment.environment": "${INTELLIDOC_ENVIRONMENT}"
+  },
+  "sampling": {
+    "percentage": 100
+  }
+}
