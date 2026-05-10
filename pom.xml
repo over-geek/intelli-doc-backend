@@ -93,6 +93,10 @@
 			<artifactId>azure-ai-formrecognizer</artifactId>
 			<version>4.1.13</version>
 		</dependency>
+		<dependency>
+			<groupId>com.azure</groupId>
+			<artifactId>azure-messaging-servicebus</artifactId>
+		</dependency>
 
 		<dependency>
 			<groupId>org.postgresql</groupId>

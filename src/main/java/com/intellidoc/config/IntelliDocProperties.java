@@ -158,8 +158,18 @@ public class IntelliDocProperties {
 
     public static class Storage {
 
+        private boolean enabled;
         private String accountName = "stintellidoc";
         private String containerName = "documents";
+        private String localRoot = ".intellidoc-storage";
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
 
         public String getAccountName() {
             return accountName;
@@ -176,15 +186,35 @@ public class IntelliDocProperties {
         public void setContainerName(String containerName) {
             this.containerName = containerName;
         }
+
+        public String getLocalRoot() {
+            return localRoot;
+        }
+
+        public void setLocalRoot(String localRoot) {
+            this.localRoot = localRoot;
+        }
     }
 
     public static class Search {
 
+        private boolean enabled = true;
         private String indexName = "intellidoc-chunks-index";
         private String semanticConfiguration = "intellidoc-semantic-config";
+        private int vectorDimensions = 3072;
+        private String vectorProfile = "intellidoc-vector-profile";
+        private String vectorAlgorithm = "intellidoc-hnsw-config";
 
         @Min(1)
         private int topK = 8;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
 
         public String getIndexName() {
             return indexName;
@@ -200,6 +230,30 @@ public class IntelliDocProperties {
 
         public void setSemanticConfiguration(String semanticConfiguration) {
             this.semanticConfiguration = semanticConfiguration;
+        }
+
+        public int getVectorDimensions() {
+            return vectorDimensions;
+        }
+
+        public void setVectorDimensions(int vectorDimensions) {
+            this.vectorDimensions = vectorDimensions;
+        }
+
+        public String getVectorProfile() {
+            return vectorProfile;
+        }
+
+        public void setVectorProfile(String vectorProfile) {
+            this.vectorProfile = vectorProfile;
+        }
+
+        public String getVectorAlgorithm() {
+            return vectorAlgorithm;
+        }
+
+        public void setVectorAlgorithm(String vectorAlgorithm) {
+            this.vectorAlgorithm = vectorAlgorithm;
         }
 
         public int getTopK() {
@@ -235,7 +289,46 @@ public class IntelliDocProperties {
 
     public static class Ingestion {
 
+        @NestedConfigurationProperty
+        private final DocumentIntelligence documentIntelligence = new DocumentIntelligence();
+
+        @NestedConfigurationProperty
+        private final Embedding embedding = new Embedding();
+
+        private boolean enabled;
+        private boolean workerEnabled;
         private String queueName = "ingestion-queue";
+        private String connectionString;
+
+        @Min(1)
+        private int maxConcurrentCalls = 1;
+
+        @Min(1)
+        private int maxDeliveryAttempts = 3;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public DocumentIntelligence getDocumentIntelligence() {
+            return documentIntelligence;
+        }
+
+        public Embedding getEmbedding() {
+            return embedding;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public boolean isWorkerEnabled() {
+            return workerEnabled;
+        }
+
+        public void setWorkerEnabled(boolean workerEnabled) {
+            this.workerEnabled = workerEnabled;
+        }
 
         public String getQueueName() {
             return queueName;
@@ -243,6 +336,105 @@ public class IntelliDocProperties {
 
         public void setQueueName(String queueName) {
             this.queueName = queueName;
+        }
+
+        public String getConnectionString() {
+            return connectionString;
+        }
+
+        public void setConnectionString(String connectionString) {
+            this.connectionString = connectionString;
+        }
+
+        public int getMaxConcurrentCalls() {
+            return maxConcurrentCalls;
+        }
+
+        public void setMaxConcurrentCalls(int maxConcurrentCalls) {
+            this.maxConcurrentCalls = maxConcurrentCalls;
+        }
+
+        public int getMaxDeliveryAttempts() {
+            return maxDeliveryAttempts;
+        }
+
+        public void setMaxDeliveryAttempts(int maxDeliveryAttempts) {
+            this.maxDeliveryAttempts = maxDeliveryAttempts;
+        }
+
+        public static class DocumentIntelligence {
+
+            private boolean enabled;
+            private String endpoint;
+            private String apiKey;
+            private String modelId = "prebuilt-layout";
+
+            public boolean isEnabled() {
+                return enabled;
+            }
+
+            public void setEnabled(boolean enabled) {
+                this.enabled = enabled;
+            }
+
+            public String getEndpoint() {
+                return endpoint;
+            }
+
+            public void setEndpoint(String endpoint) {
+                this.endpoint = endpoint;
+            }
+
+            public String getApiKey() {
+                return apiKey;
+            }
+
+            public void setApiKey(String apiKey) {
+                this.apiKey = apiKey;
+            }
+
+            public String getModelId() {
+                return modelId;
+            }
+
+            public void setModelId(String modelId) {
+                this.modelId = modelId;
+            }
+        }
+
+        public static class Embedding {
+
+            private boolean enabled = true;
+
+            @Min(1)
+            private int batchSize = 16;
+
+            @Min(0)
+            private int maxRetries = 3;
+
+            public boolean isEnabled() {
+                return enabled;
+            }
+
+            public void setEnabled(boolean enabled) {
+                this.enabled = enabled;
+            }
+
+            public int getBatchSize() {
+                return batchSize;
+            }
+
+            public void setBatchSize(int batchSize) {
+                this.batchSize = batchSize;
+            }
+
+            public int getMaxRetries() {
+                return maxRetries;
+            }
+
+            public void setMaxRetries(int maxRetries) {
+                this.maxRetries = maxRetries;
+            }
         }
     }
 

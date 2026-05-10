@@ -21,6 +21,32 @@ By default:
 
 Set `INTELLIDOC_KEY_VAULT_ENABLED=false` for local runs if you want to rely entirely on `.env.properties` or environment variables.
 
+## Service Bus Ingestion
+
+Phase 3 starts the asynchronous ingestion handoff through Azure Service Bus.
+
+Important environment variables:
+- `INTELLIDOC_INGESTION_ENABLED`
+- `INTELLIDOC_INGESTION_WORKER_ENABLED`
+- `SERVICEBUS_CONNECTION_STRING`
+- `servicebus-ingestion-queue`
+- `INTELLIDOC_DOCUMENT_INTELLIGENCE_ENABLED`
+- `DOCUMENT_INTELLIGENCE_ENDPOINT`
+- `DOCUMENT_INTELLIGENCE_API_KEY`
+- `DOCUMENT_INTELLIGENCE_MODEL_ID`
+- `INTELLIDOC_EMBEDDING_ENABLED`
+- `INTELLIDOC_EMBEDDING_BATCH_SIZE`
+- `INTELLIDOC_EMBEDDING_MAX_RETRIES`
+
+Recommended local defaults:
+- `INTELLIDOC_INGESTION_ENABLED=false` while working without Azure Service Bus
+- `INTELLIDOC_INGESTION_WORKER_ENABLED=false` while the same backend instance should not consume the queue
+- `INTELLIDOC_DOCUMENT_INTELLIGENCE_ENABLED=false` until this environment can reach the Document Intelligence endpoint
+- `INTELLIDOC_EMBEDDING_ENABLED=true` when Azure OpenAI embeddings should be generated for chunk records
+- set `INTELLIDOC_INGESTION_ENABLED=true` only when you want document uploads and new versions to publish ingestion messages to the configured queue
+- set `INTELLIDOC_INGESTION_WORKER_ENABLED=true` only when you want this Spring Boot instance to consume `ingestion-queue`
+- set `INTELLIDOC_DOCUMENT_INTELLIGENCE_ENABLED=true` when you want the worker to call the `prebuilt-layout` model and normalize the response into layout blocks
+
 ## Application Insights
 
 The backend uses the Azure Monitor Application Insights Java agent in container/runtime environments.
