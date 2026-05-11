@@ -204,6 +204,8 @@ public class IntelliDocProperties {
         private int vectorDimensions = 3072;
         private String vectorProfile = "intellidoc-vector-profile";
         private String vectorAlgorithm = "intellidoc-hnsw-config";
+        private int retrievalCandidateCount = 30;
+        private double minimumRerankerScore = 1.0;
 
         @Min(1)
         private int topK = 8;
@@ -254,6 +256,22 @@ public class IntelliDocProperties {
 
         public void setVectorAlgorithm(String vectorAlgorithm) {
             this.vectorAlgorithm = vectorAlgorithm;
+        }
+
+        public int getRetrievalCandidateCount() {
+            return retrievalCandidateCount;
+        }
+
+        public void setRetrievalCandidateCount(int retrievalCandidateCount) {
+            this.retrievalCandidateCount = retrievalCandidateCount;
+        }
+
+        public double getMinimumRerankerScore() {
+            return minimumRerankerScore;
+        }
+
+        public void setMinimumRerankerScore(double minimumRerankerScore) {
+            this.minimumRerankerScore = minimumRerankerScore;
         }
 
         public int getTopK() {
@@ -441,6 +459,7 @@ public class IntelliDocProperties {
     public static class Chat {
 
         private Duration sessionTtl = Duration.ofMinutes(30);
+        private boolean queryRewriteEnabled = true;
 
         @Min(1)
         private int conversationWindowSize = 5;
@@ -451,6 +470,14 @@ public class IntelliDocProperties {
 
         public void setSessionTtl(Duration sessionTtl) {
             this.sessionTtl = sessionTtl;
+        }
+
+        public boolean isQueryRewriteEnabled() {
+            return queryRewriteEnabled;
+        }
+
+        public void setQueryRewriteEnabled(boolean queryRewriteEnabled) {
+            this.queryRewriteEnabled = queryRewriteEnabled;
         }
 
         public int getConversationWindowSize() {

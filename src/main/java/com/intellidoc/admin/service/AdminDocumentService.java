@@ -171,6 +171,7 @@ public class AdminDocumentService {
         document.setTags(normalizeTags(command.tags()));
 
         documentRepository.save(document);
+        queueSearchRefresh(document, "metadata updated");
         log.info("Updated metadata for document {}", documentId);
         return getDocument(documentId);
     }
@@ -226,6 +227,7 @@ public class AdminDocumentService {
 
         document.setCurrentVersion(version.getVersionNumber());
         documentRepository.save(document);
+        queueSearchRefresh(document, "current version changed");
         log.info("Set current version {} for document {}", version.getVersionNumber(), documentId);
         return getDocument(documentId);
     }
@@ -243,6 +245,7 @@ public class AdminDocumentService {
             UUID documentId, List<AccessPolicyCommand> accessPolicies, String actorEmail) {
         DocumentEntity document = getDocumentEntity(documentId);
         replaceAccessPoliciesInternal(document, normalizePolicies(accessPolicies), normalizeActorEmail(actorEmail));
+        queueSearchRefresh(document, "access policies updated");
         log.info("Replaced access policies for document {}", documentId);
         return listAccessPolicies(documentId);
     }
@@ -270,6 +273,7 @@ public class AdminDocumentService {
 
         document.setStatus(targetStatus);
         documentRepository.save(document);
+        queueSearchRefresh(document, "status changed to " + targetStatus.name());
         log.info("Transitioned document {} from {} to {}", documentId, currentStatus, targetStatus);
         return getDocument(documentId);
     }
@@ -315,6 +319,17 @@ public class AdminDocumentService {
                 version.getFileType().name(),
                 version.getUploadedBy(),
                 Instant.now()));
+    }
+
+    private void queueSearchRefresh(DocumentEntity document, String reason) {
+        if (document.getCurrentVersion() <= 0) {
+            return;
+        }
+        reindexService.reindexDocument(document.getId());
+        log.info(
+                "Queued document {} for re-index because {}.",
+                document.getId(),
+                reason);
     }
 
     private Specification<DocumentEntity> buildSpecification(DocumentListCriteria criteria) {

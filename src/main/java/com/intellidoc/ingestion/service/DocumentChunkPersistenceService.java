@@ -22,6 +22,7 @@ public class DocumentChunkPersistenceService {
     @Transactional
     public List<DocumentChunkEntity> replaceChunks(IngestionWorkItem workItem, ChunkingResult chunkingResult) {
         documentChunkRepository.deleteByDocumentVersionId(workItem.documentVersionId());
+        documentChunkRepository.flush();
 
         List<DocumentChunkEntity> entities = new ArrayList<>();
         for (ChunkCandidate chunk : chunkingResult.chunks()) {

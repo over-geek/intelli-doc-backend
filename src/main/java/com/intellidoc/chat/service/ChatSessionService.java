@@ -2,6 +2,9 @@ package com.intellidoc.chat.service;
 
 import com.intellidoc.chat.model.ChatMessageEntity;
 import com.intellidoc.chat.model.ChatSessionEntity;
+import com.intellidoc.chat.repository.MessageSourceRepository;
+import com.intellidoc.chat.repository.SavedAnswerRepository;
+import com.intellidoc.chat.repository.UserFeedbackRepository;
 import com.intellidoc.chat.repository.ChatMessageRepository;
 import com.intellidoc.chat.repository.ChatSessionRepository;
 import com.intellidoc.security.model.AppUserEntity;
@@ -25,16 +28,25 @@ public class ChatSessionService {
 
     private final ChatSessionRepository chatSessionRepository;
     private final ChatMessageRepository chatMessageRepository;
+    private final MessageSourceRepository messageSourceRepository;
+    private final SavedAnswerRepository savedAnswerRepository;
+    private final UserFeedbackRepository userFeedbackRepository;
     private final AppUserRepository appUserRepository;
     private final PostgresConversationMemoryService conversationMemoryService;
 
     public ChatSessionService(
             ChatSessionRepository chatSessionRepository,
             ChatMessageRepository chatMessageRepository,
+            MessageSourceRepository messageSourceRepository,
+            SavedAnswerRepository savedAnswerRepository,
+            UserFeedbackRepository userFeedbackRepository,
             AppUserRepository appUserRepository,
             PostgresConversationMemoryService conversationMemoryService) {
         this.chatSessionRepository = chatSessionRepository;
         this.chatMessageRepository = chatMessageRepository;
+        this.messageSourceRepository = messageSourceRepository;
+        this.savedAnswerRepository = savedAnswerRepository;
+        this.userFeedbackRepository = userFeedbackRepository;
         this.appUserRepository = appUserRepository;
         this.conversationMemoryService = conversationMemoryService;
     }
@@ -63,13 +75,20 @@ public class ChatSessionService {
 
     @Transactional(readOnly = true)
     public ChatSessionDetailView getSessionMessages(String userEmail, UUID sessionId) {
+        AppUserEntity user = getCurrentUser(userEmail);
         ChatSessionEntity session = getOwnedSession(userEmail, sessionId);
         List<ChatMessageView> messages = chatMessageRepository.findBySession_IdOrderByCreatedAtAsc(sessionId).stream()
                 .map(this::toMessageView)
                 .toList();
         List<PostgresConversationMemoryService.ConversationMemoryMessage> memoryWindow =
                 conversationMemoryService.loadRecentMessages(sessionId);
-        return new ChatSessionDetailView(toSessionView(session), messages, memoryWindow);
+        return new ChatSessionDetailView(
+                toSessionView(session),
+                messages,
+                memoryWindow,
+                savedAnswerRepository.findByUser_IdOrderByCreatedAtDesc(user.getId()).stream()
+                        .map(savedAnswer -> savedAnswer.getMessage().getId())
+                        .toList());
     }
 
     @Transactional(readOnly = true)
@@ -77,6 +96,27 @@ public class ChatSessionService {
             String userEmail, UUID sessionId) {
         getOwnedSession(userEmail, sessionId);
         return conversationMemoryService.loadRecentMessages(sessionId);
+    }
+
+    @Transactional
+    public void deleteSession(String userEmail, UUID sessionId) {
+        ChatSessionEntity session = getOwnedSession(userEmail, sessionId);
+        messageSourceRepository.deleteBySessionId(sessionId);
+        savedAnswerRepository.deleteBySessionId(sessionId);
+        userFeedbackRepository.deleteBySessionId(sessionId);
+        chatMessageRepository.deleteBySession_Id(sessionId);
+        chatSessionRepository.delete(session);
+        log.info("Deleted chat session {} for user {}", sessionId, session.getUser().getEmail());
+    }
+
+    @Transactional(readOnly = true)
+    public AppUserEntity getCurrentUserEntity(String userEmail) {
+        return getCurrentUser(userEmail);
+    }
+
+    @Transactional(readOnly = true)
+    public ChatSessionEntity getOwnedSessionEntity(String userEmail, UUID sessionId) {
+        return getOwnedSession(userEmail, sessionId);
     }
 
     private AppUserEntity getCurrentUser(String userEmail) {
@@ -121,11 +161,34 @@ public class ChatSessionService {
     }
 
     private ChatMessageView toMessageView(ChatMessageEntity message) {
+        List<MessageSourceView> sources = messageSourceRepository.findByMessage_IdOrderByDisplayOrderAsc(message.getId()).stream()
+                .map(source -> new MessageSourceView(
+                        source.getId(),
+                        source.getChunk().getId(),
+                        source.getDocument().getId(),
+                        source.getDocumentTitle(),
+                        source.getPageNumber(),
+                        source.getSectionHeading(),
+                        source.getExcerpt(),
+                        source.getRelevanceScore(),
+                        source.getDisplayOrder()))
+                .toList();
+        FeedbackStateView feedback = userFeedbackRepository.findByUser_IdAndMessage_Id(
+                        message.getSession().getUser().getId(),
+                        message.getId())
+                .map(savedFeedback -> new FeedbackStateView(
+                        savedFeedback.getRating().name(),
+                        savedFeedback.getComment(),
+                        savedFeedback.isFlagged(),
+                        savedFeedback.getCreatedAt()))
+                .orElse(null);
         return new ChatMessageView(
                 message.getId(),
                 message.getRole().name(),
                 message.getContent(),
                 List.copyOf(message.getCitations()),
+                sources,
+                feedback,
                 message.getConfidenceScore(),
                 message.getTokenCountPrompt(),
                 message.getTokenCountCompletion(),
@@ -151,6 +214,8 @@ public class ChatSessionService {
             String role,
             String content,
             List<String> citations,
+            List<MessageSourceView> sources,
+            FeedbackStateView feedback,
             Double confidenceScore,
             int tokenCountPrompt,
             int tokenCountCompletion,
@@ -162,6 +227,26 @@ public class ChatSessionService {
     public record ChatSessionDetailView(
             ChatSessionView session,
             List<ChatMessageView> messages,
-            List<PostgresConversationMemoryService.ConversationMemoryMessage> memoryWindow) {
+            List<PostgresConversationMemoryService.ConversationMemoryMessage> memoryWindow,
+            List<UUID> savedAssistantMessageIds) {
+    }
+
+    public record MessageSourceView(
+            UUID id,
+            UUID chunkId,
+            UUID documentId,
+            String documentTitle,
+            Integer pageNumber,
+            String sectionHeading,
+            String excerpt,
+            Double relevanceScore,
+            int displayOrder) {
+    }
+
+    public record FeedbackStateView(
+            String rating,
+            String comment,
+            boolean flagged,
+            Instant createdAt) {
     }
 }

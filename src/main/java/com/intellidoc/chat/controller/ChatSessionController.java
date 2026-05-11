@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -55,6 +56,12 @@ public class ChatSessionController {
             @PathVariable UUID sessionId,
             Authentication authentication) {
         return ResponseEntity.ok(chatSessionService.loadConversationMemory(authentication.getName(), sessionId));
+    }
+
+    @DeleteMapping("/{sessionId}")
+    public ResponseEntity<Void> deleteSession(@PathVariable UUID sessionId, Authentication authentication) {
+        chatSessionService.deleteSession(authentication.getName(), sessionId);
+        return ResponseEntity.noContent().build();
     }
 
     public record CreateChatSessionRequest(@Size(max = 255) String title) {
